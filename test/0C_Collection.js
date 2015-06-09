@@ -68,6 +68,17 @@ test('C.a vector', function (test) {
     var pop3 = vec.shift();
     ok(pop3===IJ); //9
     equal(vec.toString(),"ⱤⱭ"); //10
+    vec.remove(1);
+    equal(vec.toString(),"Ɽ"); //11
+    vec.push(IJ);
+    vec.remove(R_tail);
+    equal(vec.toString(),"Ĳ"); //12
+    vec.unshift(R_tail);
+    vec.unshift(H_half);
+    vec.push(H_half);
+    equal(vec.toString(),"ⱵⱤĲⱵ"); //13
+    vec.remove(H_half);
+    equal(vec.toString(),"ⱤĲⱵ"); //14
     env.localhost = null;
 });
 
@@ -114,6 +125,48 @@ test('C.b serialization', function (test) {
     equal(vec.toString(),"∧∃∀∞∑∈∉∅∪∰≡≰≶");
     equal(vec_dl.toString(),"∧∃∀∞∑∈∉∅∪∰≡≰≶");
 
+    env.localhost = null;
+});
+
+asyncTest('C.c load&init events', function (test) {
+    console.warn(QUnit.config.current.testName);
+    var storage = new Storage(true);
+    storage.states = {
+        '/UnicodePoint#u262d+src1': JSON.stringify({
+            _version:'time1+src1',
+            code: 0x262d,
+            name: 'Hammer and sickle'
+        }),
+        '/UnicodePoint#u262a+src2': JSON.stringify({
+            _version:'time2+src2',
+            code: 0x262a,
+            name: 'Star and crescent'
+        }),
+        '/UnicodePoint#u2693+src3': JSON.stringify({
+            _version:'time3+src3',
+            code: 0x2693,
+            name: 'Anchor'
+        })
+    };
+    var host = new Host('local~Ca',0,storage);
+    env.localhost = host;
+    var vec = new CodePointVector();
+    var symbols = '';
+    expect(3);
+    vec.onLoad4(function (ev) {
+        equal(symbols,'');
+        equal(ev,null);
+    });
+    vec.on4('entry:init', function (ev) {
+        symbols += ev.entry.getChar();
+    });
+    vec.push('/UnicodePoint#u262d+src1');
+    vec.push('/UnicodePoint#u262a+src2');
+    vec.push('/UnicodePoint#u2693+src3');
+    vec.onLoad4(function (ev) {
+        deepEqual(symbols.match(/./g).sort(),'☭☪⚓'.match(/./g).sort());
+        start();
+    });
     env.localhost = null;
 });
 
